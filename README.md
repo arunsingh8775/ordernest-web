@@ -69,7 +69,7 @@ Endpoints used:
 
 GitHub Actions workflow: `.github/workflows/deploy.yml`
 
-On every push to `main`:
+On every push to `master`:
 
 1. Installs dependencies
 2. Runs production build
@@ -82,3 +82,4 @@ Render static site settings:
 - Publish directory: `dist`
 
 # ordernest-web
+
