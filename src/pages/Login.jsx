@@ -1,0 +1,102 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import api from "../api/axios";
+import { setToken } from "../utils/auth";
+
+export default function Login() {
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const { data } = await api.post("/api/auth/login", form);
+      const token = data?.token ?? data?.jwt ?? data?.accessToken;
+
+      if (!token) {
+        throw new Error("Missing token in login response.");
+      }
+
+      setToken(token);
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err.message ||
+        "Unable to login. Please try again.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <main className="flex min-h-screen items-center justify-center px-4 py-8">
+      <section className="w-full max-w-md rounded-2xl border border-primary-100 bg-white p-8 shadow-xl shadow-primary-100/60">
+        <h1 className="text-2xl font-semibold text-primary-700">Login</h1>
+
+        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="email">
+              Email
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={form.email}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none ring-primary-500 transition focus:ring-2"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="password">
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={form.password}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none ring-primary-500 transition focus:ring-2"
+            />
+          </div>
+
+          {error && <p className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-primary-600 px-4 py-2.5 font-medium text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {loading ? "Signing in..." : "Submit"}
+          </button>
+        </form>
+
+        <p className="mt-5 text-sm text-slate-600">
+          New here?{" "}
+          <Link to="/register" className="font-medium text-primary-700 hover:underline">
+            Create an account
+          </Link>
+        </p>
+      </section>
+    </main>
+  );
+}
