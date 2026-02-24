@@ -27,7 +27,7 @@ cp .env.example .env
 Update `.env` as needed:
 
 ```env
-VITE_API_BASE_URL=https://auth-serv.onrender.com
+VITE_API_BASE_URL=https://auth-service-6f9r.onrender.com/
 ```
 
 3. Start the dev server:
@@ -80,6 +80,7 @@ Render static site settings:
 
 - Build command: `npm run build`
 - Publish directory: `dist`
+- Environment variable: `VITE_API_BASE_URL=https://auth-service-6f9r.onrender.com/`
 
 # ordernest-web
 
