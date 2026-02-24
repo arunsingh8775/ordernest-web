@@ -27,7 +27,7 @@ cp .env.example .env
 Update `.env` as needed:
 
 ```env
-VITE_API_BASE_URL=https://auth-service-6f9r.onrender.com/
+VITE_AUTH_API_BASE_URL=https://auth-service-6f9r.onrender.com/
 ```
 
 3. Start the dev server:
@@ -57,7 +57,7 @@ App runs by default at `http://localhost:5173`.
 Axios instance is defined in `src/api/axios.js` and uses:
 
 ```js
-baseURL: import.meta.env.VITE_API_BASE_URL
+baseURL: import.meta.env.VITE_AUTH_API_BASE_URL
 ```
 
 Endpoints used:
@@ -80,7 +80,8 @@ Render static site settings:
 
 - Build command: `npm run build`
 - Publish directory: `dist`
-- Environment variable: `VITE_API_BASE_URL=https://auth-service-6f9r.onrender.com/`
+- Environment variable: `VITE_AUTH_API_BASE_URL=https://auth-service-6f9r.onrender.com/`
 
 # ordernest-web
+
 
