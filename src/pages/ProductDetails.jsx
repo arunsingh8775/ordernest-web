@@ -11,13 +11,14 @@ export default function ProductDetails() {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [orderError, setOrderError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
     const fetchProduct = async () => {
       setLoading(true);
-      setError("");
+      setLoadError("");
       try {
         const { data } = await inventoryApi.get(`/api/products/${id}`);
         if (!cancelled) {
@@ -31,7 +32,7 @@ export default function ProductDetails() {
             navigate("/login", { replace: true });
             return;
           }
-          setError(err?.response?.data?.message || "Unable to load product details.");
+          setLoadError(err?.response?.data?.message || "Unable to load product details.");
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -66,7 +67,7 @@ export default function ProductDetails() {
     if (!product) return;
 
     setSubmitting(true);
-    setError("");
+    setOrderError("");
     try {
       const payload = {
         item: {
@@ -86,7 +87,7 @@ export default function ProductDetails() {
         navigate("/login", { replace: true });
         return;
       }
-      setError(err?.response?.data?.message || err.message || "Unable to create order.");
+      setOrderError(err?.response?.data?.message || err.message || "Unable to create order.");
     } finally {
       setSubmitting(false);
     }
@@ -100,9 +101,9 @@ export default function ProductDetails() {
         </button>
 
         {loading && <p className="mt-6 text-sm text-slate-600">Loading product details...</p>}
-        {error && <p className="mt-6 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
+        {loadError && <p className="mt-6 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{loadError}</p>}
 
-        {!loading && !error && product && (
+        {!loading && !loadError && product && (
           <article className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className={`h-56 w-full rounded-2xl ${colorClass}`} />
             <div className="mt-5">
@@ -139,6 +140,9 @@ export default function ProductDetails() {
                     +
                   </button>
                 </div>
+                {orderError && (
+                  <p className="text-sm text-rose-700 sm:order-first sm:w-full">{orderError}</p>
+                )}
                 <button
                   type="button"
                   onClick={handleBuy}

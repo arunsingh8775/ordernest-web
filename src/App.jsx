@@ -6,12 +6,16 @@ import Products from "./pages/Products";
 import ProductDetails from "./pages/ProductDetails";
 import OrderDetails from "./pages/OrderDetails";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import { isAuthenticated } from "./utils/auth";
 
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
+      <Route
+        path="/login"
+        element={isAuthenticated() ? <Navigate to="/products" replace /> : <Login />}
+      />
       <Route path="/register" element={<Register />} />
       <Route
         path="/products"

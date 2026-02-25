@@ -1,39 +1,56 @@
 const TOKEN_KEY = "token";
-const AUTH_KEY = "auth";
+const LEGACY_AUTH_KEY = "auth";
+
+function extractToken(payload) {
+  return payload?.token || payload?.jwt || payload?.accessToken || null;
+}
 
 export function getAuth() {
-  const raw = localStorage.getItem(AUTH_KEY);
-  if (!raw) return null;
+  return null;
+}
+
+export function getToken() {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) {
+    return token;
+  }
+
+  // Backward compatibility: migrate legacy auth object to a single token key.
+  const legacyRaw = localStorage.getItem(LEGACY_AUTH_KEY);
+  if (!legacyRaw) {
+    return null;
+  }
 
   try {
-    return JSON.parse(raw);
+    const legacyAuth = JSON.parse(legacyRaw);
+    const legacyToken = extractToken(legacyAuth);
+    if (legacyToken) {
+      localStorage.setItem(TOKEN_KEY, legacyToken);
+    }
+    localStorage.removeItem(LEGACY_AUTH_KEY);
+    return legacyToken;
   } catch {
+    localStorage.removeItem(LEGACY_AUTH_KEY);
     return null;
   }
 }
 
-export function getToken() {
-  const auth = getAuth();
-  if (auth?.token) {
-    return auth.token;
-  }
-  return localStorage.getItem(TOKEN_KEY);
-}
-
 export function setAuth(auth) {
-  localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
-  if (auth?.token) {
-    localStorage.setItem(TOKEN_KEY, auth.token);
+  const token = extractToken(auth);
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
   }
+  localStorage.removeItem(LEGACY_AUTH_KEY);
 }
 
 export function setToken(token) {
   localStorage.setItem(TOKEN_KEY, token);
+  localStorage.removeItem(LEGACY_AUTH_KEY);
 }
 
 export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(AUTH_KEY);
+  localStorage.removeItem(LEGACY_AUTH_KEY);
 }
 
 export function isAuthenticated() {
