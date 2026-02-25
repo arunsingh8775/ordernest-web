@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
-import { setAuth } from "../utils/auth";
+import { setToken } from "../utils/auth";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -27,7 +27,7 @@ export default function Login() {
         throw new Error("Missing token in login response.");
       }
 
-      setAuth(data);
+      setToken(token);
       navigate("/products", { replace: true });
     } catch (err) {
       const message =
