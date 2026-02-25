@@ -13,6 +13,8 @@ export default function OrderDetails() {
   const [error, setError] = useState("");
   const [userError, setUserError] = useState("");
   const [paymentStatus, setPaymentStatus] = useState("");
+  const [paymentError, setPaymentError] = useState("");
+  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -20,6 +22,7 @@ export default function OrderDetails() {
       setLoading(true);
       setError("");
       setUserError("");
+      setPaymentError("");
       try {
         const [orderResult, userResult] = await Promise.allSettled([
           orderApi.get(`/api/orders/${orderId}`),
@@ -62,6 +65,41 @@ export default function OrderDetails() {
       cancelled = true;
     };
   }, [navigate, orderId]);
+
+  const handlePayNow = async () => {
+    setPaymentError("");
+    setPaying(true);
+    try {
+      const { data } = await orderApi.post(`/api/orders/${orderId}/pay`);
+      setPaymentStatus(data?.paymentStatus || "FAILED");
+      setOrder((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: data?.status || prev.status,
+              paymentStatus: data?.paymentStatus || prev.paymentStatus
+            }
+          : prev
+      );
+      if (data?.paymentStatus === "FAILED") {
+        setPaymentError(data?.reason || "Payment failed. Please try again.");
+      }
+    } catch (err) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        clearToken();
+        navigate("/login", { replace: true });
+        return;
+      }
+      setPaymentError(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          "Unable to process payment."
+      );
+    } finally {
+      setPaying(false);
+    }
+  };
 
   const currentPaymentStatus = paymentStatus || order?.paymentStatus || "UNKNOWN";
   const paymentBadgeClass =
@@ -128,13 +166,17 @@ export default function OrderDetails() {
                 <div className={`mt-3 inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${paymentBadgeClass}`}>
                   {currentPaymentStatus}
                 </div>
-                {currentPaymentStatus === "PENDING" && (
+                {paymentError && (
+                  <p className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{paymentError}</p>
+                )}
+                {(currentPaymentStatus === "PENDING" || currentPaymentStatus === "FAILED") && (
                   <button
                     type="button"
-                    onClick={() => setPaymentStatus("PAID")}
-                    className="mt-4 w-full rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-700"
+                    onClick={handlePayNow}
+                    disabled={paying}
+                    className="mt-4 w-full rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                   >
-                    Pay Now
+                    {paying ? "Processing..." : currentPaymentStatus === "FAILED" ? "Retry Payment" : "Pay Now"}
                   </button>
                 )}
               </section>
