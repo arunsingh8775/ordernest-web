@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import inventoryApi from "../api/inventoryAxios";
 import { clearToken } from "../utils/auth";
 
@@ -130,19 +130,21 @@ export default function Products() {
               {filteredProducts.map((product) => (
                 <article
                   key={product.id}
-                  className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md"
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-primary-300 hover:shadow-md"
                 >
-                  <div className={`h-16 w-16 flex-none rounded-xl ${getColorClass(product.id || product.name || "")}`} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h2 className="text-base font-semibold text-slate-900">{product.name}</h2>
-                      <p className="text-sm font-semibold text-primary-700">
-                        {formatCurrency(Number(product.price), product.currency)}
-                      </p>
+                  <Link to={`/products/${product.id}`} className="flex items-start gap-4">
+                    <div className={`h-16 w-16 flex-none rounded-xl ${getColorClass(product.id || product.name || "")}`} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h2 className="text-base font-semibold text-slate-900">{product.name}</h2>
+                        <p className="text-sm font-semibold text-primary-700">
+                          {formatCurrency(Number(product.price), product.currency)}
+                        </p>
+                      </div>
+                      <p className="mt-1 text-sm text-slate-600">Stock: {product.availableQuantity}</p>
+                      <p className="mt-2 text-sm text-slate-600">{product.description}</p>
                     </div>
-                    <p className="mt-1 text-sm text-slate-600">Stock: {product.availableQuantity}</p>
-                    <p className="mt-2 text-sm text-slate-600">{product.description}</p>
-                  </div>
+                  </Link>
                 </article>
               ))}
             </div>
