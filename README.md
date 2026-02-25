@@ -28,6 +28,7 @@ Update `.env` as needed:
 
 ```env
 VITE_AUTH_API_BASE_URL=https://auth-service-6f9r.onrender.com/
+VITE_INVENTORY_API_BASE_URL=https://ordernest-inventory-service.onrender.com/
 ```
 
 3. Start the dev server:
@@ -49,21 +50,29 @@ App runs by default at `http://localhost:5173`.
 - `/` landing page with Login and Register actions
 - `/login` authenticates user and stores JWT in `localStorage` key `token`
 - `/register` creates user and redirects to login
-- `/dashboard` protected route; redirects to `/login` if token is missing
+- `/products` protected route; fetches inventory and redirects to `/login` if token is missing
+- `/dashboard` protected route alias that redirects to `/products`
 - Logout clears token and redirects to `/`
 
 ## API integration
 
-Axios instance is defined in `src/api/axios.js` and uses:
+Axios auth instance is defined in `src/api/axios.js` and uses:
 
 ```js
 baseURL: import.meta.env.VITE_AUTH_API_BASE_URL
+```
+
+Axios inventory instance is defined in `src/api/inventoryAxios.js` and uses:
+
+```js
+baseURL: import.meta.env.VITE_INVENTORY_API_BASE_URL
 ```
 
 Endpoints used:
 
 - `POST /api/auth/login`
 - `POST /api/auth/register`
+- `GET /api/products`
 
 ## Deployment
 
@@ -80,7 +89,9 @@ Render static site settings:
 
 - Build command: `npm run build`
 - Publish directory: `dist`
-- Environment variable: `VITE_AUTH_API_BASE_URL=https://auth-service-6f9r.onrender.com/`
+- Environment variables:
+  - `VITE_AUTH_API_BASE_URL=https://auth-service-6f9r.onrender.com/`
+  - `VITE_INVENTORY_API_BASE_URL=https://ordernest-inventory-service.onrender.com/`
 
 # ordernest-web
 

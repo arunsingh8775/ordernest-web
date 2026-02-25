@@ -28,7 +28,7 @@ export default function Login() {
       }
 
       setToken(token);
-      navigate("/dashboard", { replace: true });
+      navigate("/products", { replace: true });
     } catch (err) {
       const message =
         err?.response?.data?.message ||
