@@ -3,9 +3,7 @@ const AUTH_KEY = "auth";
 
 export function getAuth() {
   const raw = localStorage.getItem(AUTH_KEY);
-  if (!raw) {
-    return null;
-  }
+  if (!raw) return null;
 
   try {
     return JSON.parse(raw);

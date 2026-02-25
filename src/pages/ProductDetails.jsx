@@ -79,9 +79,7 @@ export default function ProductDetails() {
       if (!orderId) {
         throw new Error("Order ID missing in response.");
       }
-      navigate(`/orders/${orderId}`, {
-        state: { from: `/products/${product.id}` }
-      });
+      navigate(`/orders/${orderId}`);
     } catch (err) {
       if (err?.response?.status === 401 || err?.response?.status === 403) {
         clearToken();
@@ -97,11 +95,7 @@ export default function ProductDetails() {
   return (
     <main className="min-h-screen px-4 py-8 sm:px-6">
       <section className="mx-auto w-full max-w-4xl rounded-3xl border border-primary-100 bg-white/95 p-5 shadow-2xl shadow-primary-100/70 sm:p-8">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="btn-back"
-        >
+        <button type="button" onClick={() => navigate(-1)} className="btn-back">
           Back
         </button>
 
