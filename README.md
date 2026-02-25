@@ -89,6 +89,10 @@ Render static site settings:
 
 - Build command: `npm run build`
 - Publish directory: `dist`
+- Redirects/Rewrites:
+  - Source: `/*`
+  - Destination: `/index.html`
+  - Action: `Rewrite`
 - Environment variables:
   - `VITE_AUTH_API_BASE_URL=https://auth-service-6f9r.onrender.com/`
   - `VITE_INVENTORY_API_BASE_URL=https://ordernest-inventory-service.onrender.com/`
