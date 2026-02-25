@@ -3,6 +3,7 @@ import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Products from "./pages/Products";
+import ProductDetails from "./pages/ProductDetails";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 export default function App() {
@@ -16,6 +17,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Products />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/products/:id"
+        element={
+          <ProtectedRoute>
+            <ProductDetails />
           </ProtectedRoute>
         }
       />
