@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .btn-back {
+    @apply inline-flex items-center gap-2 rounded-xl border border-primary-100 bg-white px-3 py-1.5 text-sm font-semibold text-primary-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-primary-50 hover:shadow;
+  }
+
+  .btn-back-icon {
+    @apply grid h-6 w-6 place-items-center rounded-md bg-primary-50 text-base leading-none text-primary-700;
+  }
+}
+
 body {
   @apply bg-gradient-to-br from-primary-50 via-white to-primary-100 text-slate-800 antialiased;
 }
