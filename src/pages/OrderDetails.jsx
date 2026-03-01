@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import orderApi from "../api/orderAxios";
+import paymentApi from "../api/paymentAxios";
 import api from "../api/axios";
 import { clearToken } from "../utils/auth";
 
@@ -13,10 +14,13 @@ export default function OrderDetails() {
   const [error, setError] = useState("");
   const [userError, setUserError] = useState("");
   const [paymentStatus, setPaymentStatus] = useState("");
+  const [paymentError, setPaymentError] = useState("");
+  const [paymentInitiated, setPaymentInitiated] = useState(false);
+  const [paymentSubmitting, setPaymentSubmitting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    const fetchOrder = async () => {
+  const fetchOrder = useCallback(
+    async (silent = false) => {
       setLoading(true);
       setError("");
       setUserError("");
@@ -30,38 +34,80 @@ export default function OrderDetails() {
           throw orderResult.reason;
         }
 
-        if (!cancelled) {
-          setOrder(orderResult.value.data);
-          setPaymentStatus(orderResult.value.data?.paymentStatus || "");
+        setOrder(orderResult.value.data);
+        setPaymentStatus(orderResult.value.data?.paymentStatus || "");
+        if (orderResult.value.data?.paymentStatus !== "PENDING") {
+          setPaymentInitiated(false);
+        }
 
-          if (userResult.status === "fulfilled") {
-            setUser(userResult.value.data || null);
-          } else {
-            setUserError(
-              userResult.reason?.response?.data?.error ||
-                userResult.reason?.response?.data?.message ||
-                "Unable to load user details."
-            );
-          }
+        if (userResult.status === "fulfilled") {
+          setUser(userResult.value.data || null);
+        } else {
+          setUserError(
+            userResult.reason?.response?.data?.error ||
+              userResult.reason?.response?.data?.message ||
+              "Unable to load user details."
+          );
         }
       } catch (err) {
-        if (!cancelled) {
-          if (err?.response?.status === 401 || err?.response?.status === 403) {
-            clearToken();
-            navigate("/login", { replace: true });
-            return;
-          }
-          setError(err?.response?.data?.message || "Unable to load order details.");
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          clearToken();
+          navigate("/login", { replace: true });
+          return;
         }
+        setError(err?.response?.data?.message || "Unable to load order details.");
       } finally {
-        if (!cancelled) setLoading(false);
+        setLoading(false);
+        if (silent) {
+          setRefreshing(false);
+        }
       }
-    };
-    fetchOrder();
+    },
+    [navigate, orderId]
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!cancelled) {
+      fetchOrder();
+    }
     return () => {
       cancelled = true;
     };
-  }, [navigate, orderId]);
+  }, [fetchOrder]);
+
+  const handlePayNow = async () => {
+    if (!order?.orderId || paymentSubmitting || paymentInitiated) {
+      return;
+    }
+
+    setPaymentError("");
+    setPaymentSubmitting(true);
+    try {
+      await paymentApi.post("/api/payments/process", {
+        orderId: order.orderId
+      });
+      setPaymentInitiated(true);
+    } catch (err) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        clearToken();
+        navigate("/login", { replace: true });
+        return;
+      }
+      setPaymentError(err?.response?.data?.message || "Unable to initiate payment. Please try again.");
+    } finally {
+      setPaymentSubmitting(false);
+    }
+  };
+
+  const handleManualRefresh = async () => {
+    if (refreshing) {
+      return;
+    }
+    setRefreshing(true);
+    setPaymentError("");
+    await fetchOrder(true);
+  };
 
   const currentPaymentStatus = paymentStatus || order?.paymentStatus || "UNKNOWN";
   const paymentBadgeClass =
@@ -82,13 +128,23 @@ export default function OrderDetails() {
     <main className="min-h-screen px-4 py-8 sm:px-6">
       <section className="mx-auto w-full max-w-5xl rounded-3xl border border-primary-100 bg-white/95 p-5 shadow-2xl shadow-primary-100/70 backdrop-blur-sm sm:p-8">
         <div className="flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="btn-back"
-          >
-            Back
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="btn-back"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={handleManualRefresh}
+              disabled={refreshing}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {refreshing ? "Refreshing..." : "Refresh Page"}
+            </button>
+          </div>
           <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
             Order #{orderId?.slice(0, 8)}
           </span>
@@ -128,13 +184,22 @@ export default function OrderDetails() {
                 <div className={`mt-3 inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${paymentBadgeClass}`}>
                   {currentPaymentStatus}
                 </div>
+                {paymentInitiated && (
+                  <div className="mt-3 inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
+                    PAYMENT_INITIATED
+                  </div>
+                )}
+                {paymentError && (
+                  <p className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{paymentError}</p>
+                )}
                 {currentPaymentStatus === "PENDING" && (
                   <button
                     type="button"
-                    onClick={() => setPaymentStatus("PAID")}
-                    className="mt-4 w-full rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-700"
+                    onClick={handlePayNow}
+                    disabled={paymentSubmitting || paymentInitiated}
+                    className="mt-4 w-full rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Pay Now
+                    {paymentSubmitting ? "Initiating Payment..." : paymentInitiated ? "Payment Initiated" : "Pay Now"}
                   </button>
                 )}
               </section>
