@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import inventoryApi from "../api/inventoryAxios";
 import { clearToken } from "../utils/auth";
+import { getColorClass } from "../utils/colorSwatch";
+import { formatCurrency } from "../utils/formatters";
 
 export default function Products() {
   const navigate = useNavigate();
@@ -66,29 +68,6 @@ export default function Products() {
       return name.includes(query) || description.includes(query) || currency.includes(query);
     });
   }, [products, search]);
-
-  const formatCurrency = (amount, currency = "INR") =>
-    new Intl.NumberFormat("en-IN", { style: "currency", currency, maximumFractionDigits: 2 }).format(amount || 0);
-
-  const swatchPalette = [
-    "bg-rose-100",
-    "bg-amber-100",
-    "bg-lime-100",
-    "bg-emerald-100",
-    "bg-cyan-100",
-    "bg-sky-100",
-    "bg-indigo-100",
-    "bg-violet-100"
-  ];
-
-  const getColorClass = (value = "") => {
-    let hash = 0;
-    for (let i = 0; i < value.length; i += 1) {
-      hash = (hash << 5) - hash + value.charCodeAt(i);
-      hash |= 0;
-    }
-    return swatchPalette[Math.abs(hash) % swatchPalette.length];
-  };
 
   return (
     <main className="min-h-screen px-4 py-8 sm:px-6">
