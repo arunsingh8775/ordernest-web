@@ -4,6 +4,23 @@ import orderApi from "../api/orderAxios";
 import paymentApi from "../api/paymentAxios";
 import api from "../api/axios";
 import { clearToken } from "../utils/auth";
+import { formatCurrency } from "../utils/formatters";
+
+const ORDER_STATUS = Object.freeze({
+  CREATED: "CREATED",
+  PENDING: "PENDING",
+  SUCCESS: "SUCCESS",
+  FAILED: "FAILED",
+  CONFIRMED: "CONFIRMED",
+  CANCELLED: "CANCELLED"
+});
+
+const PAYMENT_STATUS = Object.freeze({
+  PENDING: "PENDING",
+  SUCCESS: "SUCCESS",
+  PAID: "PAID",
+  FAILED: "FAILED"
+});
 
 export default function OrderDetails() {
   const { orderId } = useParams();
@@ -20,7 +37,8 @@ export default function OrderDetails() {
   const [refreshing, setRefreshing] = useState(false);
   const currentOrderStatus = order?.status || "UNKNOWN";
 
-  const isTerminalOrderStatus = (status) => status === "CONFIRMED" || status === "CANCELLED";
+  const isTerminalOrderStatus = (status) =>
+    status === ORDER_STATUS.CONFIRMED || status === ORDER_STATUS.CANCELLED;
 
   const fetchOrder = useCallback(
     async (silent = false) => {
@@ -39,7 +57,7 @@ export default function OrderDetails() {
 
         setOrder(orderResult.value.data);
         setPaymentStatus(orderResult.value.data?.paymentStatus || "");
-        if (orderResult.value.data?.paymentStatus !== "PENDING") {
+        if (orderResult.value.data?.paymentStatus !== PAYMENT_STATUS.PENDING) {
           setPaymentInitiated(false);
         }
 
@@ -142,26 +160,24 @@ export default function OrderDetails() {
 
   const currentPaymentStatus = paymentStatus || order?.paymentStatus || "UNKNOWN";
   const displayPaymentStatus =
-    paymentInitiated && currentPaymentStatus === "PENDING" ? "PAYMENT INITIATED" : currentPaymentStatus;
-  const formatCurrency = (amount, currency = "INR") =>
-    new Intl.NumberFormat("en-IN", { style: "currency", currency, maximumFractionDigits: 2 }).format(amount || 0);
+    paymentInitiated && currentPaymentStatus === PAYMENT_STATUS.PENDING ? "PAYMENT INITIATED" : currentPaymentStatus;
   const paymentBadgeClass =
-    displayPaymentStatus === "PAID" || displayPaymentStatus === "SUCCESS"
+    displayPaymentStatus === PAYMENT_STATUS.PAID || displayPaymentStatus === PAYMENT_STATUS.SUCCESS
       ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-      : displayPaymentStatus === "PENDING"
+      : displayPaymentStatus === PAYMENT_STATUS.PENDING
         ? "bg-amber-100 text-amber-800 border-amber-200"
         : displayPaymentStatus === "PAYMENT INITIATED"
           ? "bg-blue-100 text-blue-800 border-blue-200"
-        : displayPaymentStatus === "FAILED"
+        : displayPaymentStatus === PAYMENT_STATUS.FAILED
           ? "bg-rose-100 text-rose-800 border-rose-200"
         : "bg-slate-100 text-slate-700 border-slate-200";
 
   const orderBadgeClass =
-    currentOrderStatus === "CONFIRMED"
+    currentOrderStatus === ORDER_STATUS.CONFIRMED || currentOrderStatus === ORDER_STATUS.SUCCESS
       ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-      : currentOrderStatus === "CREATED" || currentOrderStatus === "PENDING"
+      : currentOrderStatus === ORDER_STATUS.CREATED || currentOrderStatus === ORDER_STATUS.PENDING
         ? "bg-amber-100 text-amber-800 border-amber-200"
-        : currentOrderStatus === "CANCELLED" || currentOrderStatus === "FAILED"
+        : currentOrderStatus === ORDER_STATUS.CANCELLED || currentOrderStatus === ORDER_STATUS.FAILED
           ? "bg-rose-100 text-rose-800 border-rose-200"
         : "bg-slate-100 text-slate-700 border-slate-200";
 
@@ -234,7 +250,7 @@ export default function OrderDetails() {
                 {paymentError && (
                   <p className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{paymentError}</p>
                 )}
-                {currentPaymentStatus === "PENDING" && (
+                {currentPaymentStatus === PAYMENT_STATUS.PENDING && (
                   <button
                     type="button"
                     onClick={handlePayNow}

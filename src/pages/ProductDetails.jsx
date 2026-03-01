@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import inventoryApi from "../api/inventoryAxios";
 import orderApi from "../api/orderAxios";
 import { clearToken } from "../utils/auth";
+import { getColorClass } from "../utils/colorSwatch";
+import { formatCurrency } from "../utils/formatters";
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -52,16 +54,7 @@ export default function ProductDetails() {
     setQuantity(Math.min(Math.max(Math.floor(safe), 1), maxQuantity));
   };
 
-  const formatCurrency = (amount, currency = "INR") =>
-    new Intl.NumberFormat("en-IN", { style: "currency", currency, maximumFractionDigits: 2 }).format(amount || 0);
-
-  const colorClass = useMemo(() => {
-    const palette = ["bg-rose-100", "bg-amber-100", "bg-lime-100", "bg-emerald-100", "bg-cyan-100", "bg-sky-100", "bg-indigo-100"];
-    const value = product?.id || id || "";
-    let hash = 0;
-    for (let i = 0; i < value.length; i += 1) hash = (hash << 5) - hash + value.charCodeAt(i);
-    return palette[Math.abs(hash) % palette.length];
-  }, [id, product?.id]);
+  const colorClass = useMemo(() => getColorClass(product?.id || id || ""), [id, product?.id]);
 
   const handleBuy = async () => {
     if (!product) return;
