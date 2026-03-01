@@ -18,6 +18,9 @@ export default function OrderDetails() {
   const [paymentInitiated, setPaymentInitiated] = useState(false);
   const [paymentSubmitting, setPaymentSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const currentOrderStatus = order?.status || "UNKNOWN";
+
+  const isTerminalOrderStatus = (status) => status === "CONFIRMED" || status === "CANCELLED";
 
   const fetchOrder = useCallback(
     async (silent = false) => {
@@ -109,19 +112,57 @@ export default function OrderDetails() {
     await fetchOrder(true);
   };
 
+  useEffect(() => {
+    if (!paymentInitiated || isTerminalOrderStatus(currentOrderStatus)) {
+      return undefined;
+    }
+
+    const pollOrderStatus = async () => {
+      try {
+        const { data } = await orderApi.get(`/api/orders/${orderId}`);
+        setOrder(data);
+        setPaymentStatus(data?.paymentStatus || "");
+
+        if (isTerminalOrderStatus(data?.status)) {
+          setPaymentInitiated(false);
+        }
+      } catch (err) {
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          clearToken();
+          navigate("/login", { replace: true });
+          return;
+        }
+      }
+    };
+
+    const intervalId = setInterval(pollOrderStatus, 10000);
+
+    return () => clearInterval(intervalId);
+  }, [currentOrderStatus, navigate, orderId, paymentInitiated]);
+
   const currentPaymentStatus = paymentStatus || order?.paymentStatus || "UNKNOWN";
+  const displayPaymentStatus =
+    paymentInitiated && currentPaymentStatus === "PENDING" ? "PAYMENT INITIATED" : currentPaymentStatus;
+  const formatCurrency = (amount, currency = "INR") =>
+    new Intl.NumberFormat("en-IN", { style: "currency", currency, maximumFractionDigits: 2 }).format(amount || 0);
   const paymentBadgeClass =
-    currentPaymentStatus === "PAID"
+    displayPaymentStatus === "PAID" || displayPaymentStatus === "SUCCESS"
       ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-      : currentPaymentStatus === "PENDING"
+      : displayPaymentStatus === "PENDING"
         ? "bg-amber-100 text-amber-800 border-amber-200"
+        : displayPaymentStatus === "PAYMENT INITIATED"
+          ? "bg-blue-100 text-blue-800 border-blue-200"
+        : displayPaymentStatus === "FAILED"
+          ? "bg-rose-100 text-rose-800 border-rose-200"
         : "bg-slate-100 text-slate-700 border-slate-200";
 
   const orderBadgeClass =
-    order?.status === "CONFIRMED"
+    currentOrderStatus === "CONFIRMED"
       ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-      : order?.status === "PENDING"
+      : currentOrderStatus === "CREATED" || currentOrderStatus === "PENDING"
         ? "bg-amber-100 text-amber-800 border-amber-200"
+        : currentOrderStatus === "CANCELLED" || currentOrderStatus === "FAILED"
+          ? "bg-rose-100 text-rose-800 border-rose-200"
         : "bg-slate-100 text-slate-700 border-slate-200";
 
   return (
@@ -165,7 +206,7 @@ export default function OrderDetails() {
                 <p className="mt-1 break-all text-sm font-medium text-slate-700">{order.orderId}</p>
                 <h2 className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Order Status</h2>
                 <div className={`mt-3 inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${orderBadgeClass}`}>
-                  {order.status}
+                  {currentOrderStatus}
                 </div>
                 <dl className="mt-4 space-y-2 rounded-xl bg-slate-50 p-3 text-sm">
                   <div className="flex items-start justify-between gap-3">
@@ -176,19 +217,20 @@ export default function OrderDetails() {
                     <dt className="text-slate-500">Quantity</dt>
                     <dd className="font-medium text-slate-800">{order.item?.quantity}</dd>
                   </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <dt className="text-slate-500">Total Amount</dt>
+                    <dd className="font-medium text-slate-800">
+                      {formatCurrency(Number(order.item?.totalAmount), order.item?.currency)}
+                    </dd>
+                  </div>
                 </dl>
               </section>
 
               <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
                 <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Payment Status</h2>
                 <div className={`mt-3 inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${paymentBadgeClass}`}>
-                  {currentPaymentStatus}
+                  {displayPaymentStatus}
                 </div>
-                {paymentInitiated && (
-                  <div className="mt-3 inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
-                    PAYMENT_INITIATED
-                  </div>
-                )}
                 {paymentError && (
                   <p className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{paymentError}</p>
                 )}
