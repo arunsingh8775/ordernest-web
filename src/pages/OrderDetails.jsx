@@ -233,9 +233,28 @@ export default function OrderDetails() {
               {refreshing ? "Refreshing..." : "Refresh Page"}
             </button>
           </div>
-          <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
-            Order #{orderId?.slice(0, 8)}
-          </span>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate("/orders")}
+              className="rounded-lg border border-primary-200 bg-white px-4 py-2 text-sm font-semibold text-primary-700 transition hover:bg-primary-50"
+            >
+              My Orders
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                clearToken();
+                navigate("/", { replace: true });
+              }}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              Logout
+            </button>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
+              Order #{orderId?.slice(0, 8)}
+            </span>
+          </div>
         </div>
 
         {loading && <p className="mt-6 text-sm text-slate-600">Loading order details...</p>}
@@ -252,19 +271,21 @@ export default function OrderDetails() {
                 <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">Order ID</p>
                 <p className="mt-1 break-all text-sm font-medium text-slate-700">{order.orderId}</p>
                 <h2 className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Order Status</h2>
-                <div className={`mt-3 inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${orderBadgeClass}`}>
-                  {currentOrderStatus}
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <div className={`inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${orderBadgeClass}`}>
+                    {currentOrderStatus}
+                  </div>
+                  {currentOrderStatus !== ORDER_STATUS.CANCELLED && (
+                    <button
+                      type="button"
+                      onClick={handleCancelOrder}
+                      disabled={cancelSubmitting}
+                      className="inline-flex rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {cancelSubmitting ? "Cancelling Order..." : "Cancel Order"}
+                    </button>
+                  )}
                 </div>
-                {currentOrderStatus !== ORDER_STATUS.CANCELLED && (
-                  <button
-                    type="button"
-                    onClick={handleCancelOrder}
-                    disabled={cancelSubmitting}
-                    className="mt-4 w-full rounded-lg bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {cancelSubmitting ? "Cancelling Order..." : "Cancel Order"}
-                  </button>
-                )}
                 {cancelError && (
                   <p className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{cancelError}</p>
                 )}
@@ -288,21 +309,23 @@ export default function OrderDetails() {
 
               <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
                 <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Payment Status</h2>
-                <div className={`mt-3 inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${paymentBadgeClass}`}>
-                  {displayPaymentStatus}
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <div className={`inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${paymentBadgeClass}`}>
+                    {displayPaymentStatus}
+                  </div>
+                  {currentPaymentStatus === PAYMENT_STATUS.PENDING && currentOrderStatus !== ORDER_STATUS.CANCELLED && (
+                    <button
+                      type="button"
+                      onClick={handlePayNow}
+                      disabled={paymentSubmitting || paymentInitiated || cancelSubmitting}
+                      className="inline-flex rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {paymentSubmitting ? "Initiating Payment..." : paymentInitiated ? "Payment Initiated" : "Pay Now"}
+                    </button>
+                  )}
                 </div>
                 {paymentError && (
                   <p className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{paymentError}</p>
-                )}
-                {currentPaymentStatus === PAYMENT_STATUS.PENDING && currentOrderStatus !== ORDER_STATUS.CANCELLED && (
-                  <button
-                    type="button"
-                    onClick={handlePayNow}
-                    disabled={paymentSubmitting || paymentInitiated || cancelSubmitting}
-                    className="mt-4 w-full rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {paymentSubmitting ? "Initiating Payment..." : paymentInitiated ? "Payment Initiated" : "Pay Now"}
-                  </button>
                 )}
               </section>
 

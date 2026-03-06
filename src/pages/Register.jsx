@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import { clearToken, isAuthenticated } from "../utils/auth";
 
 function validate(form) {
   const errors = {};
@@ -30,6 +31,7 @@ function validate(form) {
 
 export default function Register() {
   const navigate = useNavigate();
+  const showLogout = isAuthenticated();
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -70,9 +72,25 @@ export default function Register() {
     }
   };
 
+  const handleLogout = () => {
+    clearToken();
+    navigate("/", { replace: true });
+  };
+
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-8">
       <section className="w-full max-w-md rounded-2xl border border-primary-100 bg-white p-8 shadow-xl shadow-primary-100/60">
+        {showLogout && (
+          <div className="mb-4 flex justify-end">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+            >
+              Logout
+            </button>
+          </div>
+        )}
         <h1 className="text-2xl font-semibold text-primary-700">Register</h1>
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>

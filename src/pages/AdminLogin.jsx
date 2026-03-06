@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
-import { clearToken, isAdmin, setToken } from "../utils/auth";
+import { clearToken, isAdmin, isAuthenticated, setToken } from "../utils/auth";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
+  const showLogout = isAuthenticated();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -12,6 +13,11 @@ export default function AdminLogin() {
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleLogout = () => {
+    clearToken();
+    navigate("/", { replace: true });
   };
 
   const handleSubmit = async (event) => {
@@ -49,6 +55,17 @@ export default function AdminLogin() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-8">
       <section className="w-full max-w-md rounded-2xl border border-primary-100 bg-white p-8 shadow-xl shadow-primary-100/60">
+        {showLogout && (
+          <div className="mb-4 flex justify-end">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+            >
+              Logout
+            </button>
+          </div>
+        )}
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary-600">OrderNest Console</p>
         <h1 className="mt-2 text-2xl font-semibold text-primary-700">Admin Login</h1>
 
