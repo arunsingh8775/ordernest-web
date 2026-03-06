@@ -93,6 +93,17 @@ export function getUserRole(token = getToken()) {
   return normalized.startsWith("ROLE_") ? normalized.slice(5) : normalized;
 }
 
+export function getUserId(token = getToken()) {
+  const payload = getTokenPayload(token);
+  const userId = payload?.userId;
+
+  if (!userId || typeof userId !== "string") {
+    return null;
+  }
+
+  return userId;
+}
+
 export function isAdmin(token = getToken()) {
   return getUserRole(token) === "ADMIN";
 }

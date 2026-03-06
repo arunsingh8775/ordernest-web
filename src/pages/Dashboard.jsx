@@ -29,7 +29,7 @@ export default function Dashboard() {
 
   const logout = () => {
     clearToken();
-    navigate("/admin/login", { replace: true });
+    navigate("/", { replace: true });
   };
 
   const handleUnauthorized = () => {

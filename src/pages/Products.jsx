@@ -54,7 +54,7 @@ export default function Products() {
 
   const logout = () => {
     clearToken();
-    navigate("/login", { replace: true });
+    navigate("/", { replace: true });
   };
 
   const filteredProducts = useMemo(() => {
@@ -77,12 +77,20 @@ export default function Products() {
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary-600">Inventory</p>
             <h1 className="mt-1 text-3xl font-semibold text-slate-900">Products</h1>
           </div>
-          <button
-            onClick={logout}
-            className="self-start rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 sm:self-auto"
-          >
-            Logout
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate("/orders")}
+              className="self-start rounded-lg border border-primary-200 bg-white px-4 py-2 text-sm font-medium text-primary-700 transition hover:bg-primary-50 sm:self-auto"
+            >
+              My Orders
+            </button>
+            <button
+              onClick={logout}
+              className="self-start rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 sm:self-auto"
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
         <div className="mt-6">

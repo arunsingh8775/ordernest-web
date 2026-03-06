@@ -16,6 +16,11 @@ export default function ProductDetails() {
   const [loadError, setLoadError] = useState("");
   const [orderError, setOrderError] = useState("");
 
+  const logout = () => {
+    clearToken();
+    navigate("/", { replace: true });
+  };
+
   useEffect(() => {
     let cancelled = false;
     const fetchProduct = async () => {
@@ -89,9 +94,27 @@ export default function ProductDetails() {
   return (
     <main className="min-h-screen px-4 py-8 sm:px-6">
       <section className="mx-auto w-full max-w-4xl rounded-3xl border border-primary-100 bg-white/95 p-5 shadow-2xl shadow-primary-100/70 sm:p-8">
-        <button type="button" onClick={() => navigate(-1)} className="btn-back">
-          Back
-        </button>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => navigate(-1)} className="btn-back">
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/orders")}
+              className="rounded-lg border border-primary-200 bg-white px-4 py-2 text-sm font-medium text-primary-700 transition hover:bg-primary-50"
+            >
+              My Orders
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={logout}
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+          >
+            Logout
+          </button>
+        </div>
 
         {loading && <p className="mt-6 text-sm text-slate-600">Loading product details...</p>}
         {loadError && <p className="mt-6 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{loadError}</p>}
