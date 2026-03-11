@@ -15,7 +15,10 @@ import { getPostLoginPath, isAdmin, isAuthenticated } from "./utils/auth";
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Landing />} />
+      <Route
+        path="/"
+        element={isAuthenticated() ? <Navigate to={getPostLoginPath()} replace /> : <Landing />}
+      />
       <Route
         path="/login"
         element={isAuthenticated() ? <Navigate to={getPostLoginPath()} replace /> : <Login />}

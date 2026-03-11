@@ -6,6 +6,30 @@ import api from "../api/axios";
 import { clearToken } from "../utils/auth";
 import { formatCurrency } from "../utils/formatters";
 
+const RAZORPAY_CHECKOUT_SCRIPT_URL = "https://checkout.razorpay.com/v1/checkout.js";
+
+const loadRazorpayCheckout = () =>
+  new Promise((resolve, reject) => {
+    if (window.Razorpay) {
+      resolve(window.Razorpay);
+      return;
+    }
+
+    const existing = document.querySelector(`script[src="${RAZORPAY_CHECKOUT_SCRIPT_URL}"]`);
+    if (existing) {
+      existing.addEventListener("load", () => resolve(window.Razorpay), { once: true });
+      existing.addEventListener("error", () => reject(new Error("Unable to load Razorpay checkout")), { once: true });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = RAZORPAY_CHECKOUT_SCRIPT_URL;
+    script.async = true;
+    script.onload = () => resolve(window.Razorpay);
+    script.onerror = () => reject(new Error("Unable to load Razorpay checkout"));
+    document.body.appendChild(script);
+  });
+
 const ORDER_STATUS = Object.freeze({
   CREATED: "CREATED",
   PENDING: "PENDING",
@@ -34,6 +58,7 @@ export default function OrderDetails() {
   const [paymentStatus, setPaymentStatus] = useState("");
   const [paymentError, setPaymentError] = useState("");
   const [paymentInitiated, setPaymentInitiated] = useState(false);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
   const [paymentSubmitting, setPaymentSubmitting] = useState(false);
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
   const [cancelError, setCancelError] = useState("");
@@ -107,11 +132,69 @@ export default function OrderDetails() {
 
     setPaymentError("");
     setPaymentSubmitting(true);
+
     try {
-      await paymentApi.post("/api/payments/process", {
+      const Razorpay = await loadRazorpayCheckout();
+      if (!Razorpay) {
+        throw new Error("Razorpay checkout is unavailable");
+      }
+
+      const { data: createOrderData } = await paymentApi.post("/api/payments/create-order", {
         orderId: order.orderId
       });
-      setPaymentInitiated(true);
+
+      const options = {
+        key: createOrderData?.razorpayKeyId,
+        amount: createOrderData?.amount,
+        currency: createOrderData?.currency,
+        name: "OrderNest",
+        description: `Payment for Order ${order.orderId}`,
+        order_id: createOrderData?.razorpayOrderId,
+        prefill: {
+          name: [user?.firstName, user?.lastName].filter(Boolean).join(" "),
+          email: user?.email || ""
+        },
+        handler: async (response) => {
+          setVerifyingPayment(true);
+          try {
+            const { data: verifyData } = await paymentApi.post("/api/payments/verify", {
+              orderId: order.orderId,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature
+            });
+
+            if (!verifyData?.verified) {
+              throw new Error(verifyData?.message || "Payment verification failed");
+            }
+
+            setPaymentInitiated(true);
+            setPaymentError("");
+            await fetchOrder(true);
+          } catch (verifyError) {
+            setPaymentInitiated(false);
+            setPaymentError(verifyError?.response?.data?.message || verifyError?.message || "Payment verification failed.");
+          } finally {
+            setVerifyingPayment(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setPaymentInitiated(false);
+          }
+        },
+        theme: {
+          color: "#0f766e"
+        }
+      };
+
+      const razorpayInstance = new Razorpay(options);
+      razorpayInstance.on("payment.failed", (response) => {
+        setPaymentInitiated(false);
+        setPaymentError(response?.error?.description || "Payment failed. Please try again.");
+      });
+
+      razorpayInstance.open();
     } catch (err) {
       if (err?.response?.status === 401 || err?.response?.status === 403) {
         clearToken();
@@ -317,13 +400,22 @@ export default function OrderDetails() {
                     <button
                       type="button"
                       onClick={handlePayNow}
-                      disabled={paymentSubmitting || paymentInitiated || cancelSubmitting}
+                      disabled={paymentSubmitting || paymentInitiated || cancelSubmitting || verifyingPayment}
                       className="inline-flex rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {paymentSubmitting ? "Initiating Payment..." : paymentInitiated ? "Payment Initiated" : "Pay Now"}
+                      {paymentSubmitting
+                        ? "Initiating Payment..."
+                        : verifyingPayment
+                          ? "Verifying Payment..."
+                          : paymentInitiated
+                            ? "Payment Initiated"
+                            : "Pay Now"}
                     </button>
                   )}
                 </div>
+                {verifyingPayment && (
+                  <p className="mt-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">Verifying payment...</p>
+                )}
                 {paymentError && (
                   <p className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{paymentError}</p>
                 )}
